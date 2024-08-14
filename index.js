@@ -9,28 +9,45 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Route to handle email submission
 app.post("/api/agency_information", async (req, res) => {
+  const {
+    email,
+    membershipPlan,
+    staffingAgencyName,
+    staffingAgencyEIN,
+    staffingAgencyWebsite,
+    fullNameAdmin,
+    password,
+  } = req.body;
+
   try {
-    const { email, membershipPlan } = req.body;
-    if (email) {
-      const newEmailEntry = await pool.query(
-        'INSERT INTO agency_information ("Email") VALUES ($1) RETURNING *',
-        [email]
-      );
-      res.json(newEmailEntry.rows[0]);
-    } else if (membershipPlan) {
-      const updatePlan = await pool.query(
-        'UPDATE agency_information SET "Membership Plan" = $1 WHERE "Email" IS NOT NULL RETURNING *',
-        [membershipPlan]
-      );
-      res.json(updatePlan.rows[0]);
-    } else {
-      res.status(400).send("Invalid request");
-    }
+    const query = `
+      INSERT INTO agency_information (
+        "Email",
+        "Membership Plan",
+        "Staffing Agency Name",
+        "Staffing Agency EIN",
+        "Staffing Agency Website",
+        "Full Name (Admin)",
+        "Password"
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7);
+    `;
+
+    await pool.query(query, [
+      email,
+      membershipPlan,
+      staffingAgencyName,
+      staffingAgencyEIN,
+      staffingAgencyWebsite,
+      fullNameAdmin,
+      password,
+    ]);
+
+    res.status(200).json({ message: "Data saved successfully" });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+    console.error(err);
+    res.status(500).json({ error: "An error occurred while saving data" });
   }
 });
 

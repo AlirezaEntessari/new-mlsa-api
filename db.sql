@@ -10,3 +10,19 @@ CREATE TABLE agency_information (
     "Full Name (Admin)" VARCHAR(255),
     "Password" VARCHAR(255)
 );
+
+CREATE TABLE payment_details (
+    "Billing Duration" VARCHAR(255),
+    "Payment Method" VARCHAR(255),
+    "First name" VARCHAR(255),
+    "Last name" VARCHAR(255),
+    "Card number" VARCHAR(255),
+    "Expires" VARCHAR(255),
+    "CVV" VARCHAR(255),
+    "Address Line 1" VARCHAR(255),
+    "Address Line 2" VARCHAR(255),
+    "City" VARCHAR(255),
+    "State" VARCHAR(255),
+    "Country/region" VARCHAR(255),
+    "Zip code" VARCHAR(255)
+);
