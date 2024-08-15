@@ -53,6 +53,7 @@ app.post("/api/agency_information", async (req, res) => {
 
 app.post('/api/payment-details', async (req, res) => {
   const {
+    billingDuration,
     firstName,
     lastName,
     cardNumber,
@@ -68,14 +69,14 @@ app.post('/api/payment-details', async (req, res) => {
 
   const query = `
     INSERT INTO payment_details (
-      "First name", "Last name", "Card number", "Expires", "CVV", 
+      "Billing Duration", "First name", "Last name", "Card number", "Expires", "CVV", 
       "Address Line 1", "Address Line 2", "City", "State", 
       "Country/region", "Zip code"
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
   `;
 
   const values = [
-    firstName, lastName, cardNumber, expires, cvv, 
+    billingDuration, firstName, lastName, cardNumber, expires, cvv, 
     addressLine1, addressLine2, city, state, 
     countryRegion, zipCode
   ];
