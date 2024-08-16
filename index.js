@@ -16,6 +16,7 @@ app.post("/api/agency_information", async (req, res) => {
     staffingAgencyName,
     staffingAgencyEIN,
     staffingAgencyWebsite,
+    industryField,
     fullNameAdmin,
     password,
   } = req.body;
@@ -28,10 +29,11 @@ app.post("/api/agency_information", async (req, res) => {
         "Staffing Agency Name",
         "Staffing Agency EIN",
         "Staffing Agency Website",
+        "Industry Field",
         "Full Name (Admin)",
         "Password"
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
     `;
 
     await pool.query(query, [
@@ -40,6 +42,7 @@ app.post("/api/agency_information", async (req, res) => {
       staffingAgencyName,
       staffingAgencyEIN,
       staffingAgencyWebsite,
+      industryField,
       fullNameAdmin,
       password,
     ]);
@@ -89,6 +92,27 @@ app.post('/api/payment-details', async (req, res) => {
     res.status(500).json({ error: 'Failed to save payment details' });
   }
 });
+
+app.post("/api/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const query = `
+      SELECT * FROM agency_information WHERE "Email" = $1 AND "Password" = $2;
+    `;
+    const result = await pool.query(query, [email, password]);
+
+    if (result.rows.length > 0) {
+      res.status(200).json({ message: "Login successful" });
+    } else {
+      res.status(401).json({ error: "Email and password do not match" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "An error occurred during login" });
+  }
+});
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;
