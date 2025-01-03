@@ -183,7 +183,7 @@ app.post("/api/save-draft", async (req, res) => {
   }
 
   const query = `
-    INSERT INTO account_settings_administrator ("First Name", "Last Name", "Email", "Phone", "Biography")
+    INSERT INTO account_settings_administrator_profile ("First Name", "Last Name", "Email", "Phone", "Biography")
     VALUES ($1, $2, $3, $4, $5)
     RETURNING *;
   `;
@@ -203,6 +203,62 @@ app.post("/api/save-draft", async (req, res) => {
   } catch (error) {
     console.error("Error saving draft:", error);
     res.status(500).json({ message: "Error saving draft." });
+  }
+});
+
+app.post("/api/save-agency-draft", async (req, res) => {
+  const {
+    nameOfAgency,
+    agencyPhone,
+    agencyWebsite,
+    facebookLink,
+    instagramLink,
+    youtubeLink,
+    aboutYourAgency,
+  } = req.body;
+
+  if (
+    !nameOfAgency ||
+    !agencyPhone ||
+    !agencyWebsite ||
+    !facebookLink ||
+    !instagramLink ||
+    !youtubeLink ||
+    !aboutYourAgency
+  ) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  const query = `
+    INSERT INTO account_settings_administrator_agency (
+      "Name of Agency",
+      "Agency Phone",
+      "Agency Website",
+      "Facebook Link",
+      "Instagram Link",
+      "YouTube Link",
+      "About Your Agency"
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *;
+  `;
+
+  try {
+    const result = await pool.query(query, [
+      nameOfAgency,
+      agencyPhone,
+      agencyWebsite,
+      facebookLink,
+      instagramLink,
+      youtubeLink,
+      aboutYourAgency,
+    ]);
+    res.status(201).json({
+      message: "Agency draft saved successfully.",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error saving agency draft:", error);
+    res.status(500).json({ message: "Error saving agency draft." });
   }
 });
 

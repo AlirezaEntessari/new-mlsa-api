@@ -27,11 +27,22 @@ CREATE TABLE payment_details (
     "Zip code" VARCHAR(255)
 );
 
-CREATE TABLE account_settings_administrator (
+CREATE TABLE account_settings_administrator_profile (
     "First Name" VARCHAR(255),
     "Last Name" VARCHAR(255),
     "Email" VARCHAR(255),
     "Phone" VARCHAR(50),
     "Biography" TEXT
 );
+
+CREATE TABLE account_settings_administrator_agency (
+    "Name of Agency" VARCHAR(255),
+    "Agency Phone" VARCHAR(50),
+    "Agency Website" VARCHAR(255),
+    "Facebook Link" VARCHAR(255),
+    "Instagram Link" VARCHAR(255),
+    "YouTube Link" VARCHAR(255),
+    "About Your Agency" TEXT
+);
+
 
