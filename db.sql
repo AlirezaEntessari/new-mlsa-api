@@ -44,3 +44,6 @@ CREATE TABLE account_settings_administrator_agency (
     "YouTube Link" VARCHAR(255),
     "About Your Agency" TEXT
 );
+
+
+
