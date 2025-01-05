@@ -324,6 +324,23 @@ app.post("/api/account-settings/password", async (req, res) => {
   }
 });
 
+// Endpoint to save user profile
+app.post("/api/account-settings/user-profile", async (req, res) => {
+  const { firstName, lastName, email, phone, biography } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO account_settings_user_profile ("First Name", "Last Name", "Email", "Phone", "Biography")
+       VALUES ($1, $2, $3, $4, $5)`,
+      [firstName, lastName, email, phone, biography]
+    );
+    res.status(200).send({ message: "Profile saved successfully!" });
+  } catch (error) {
+    console.error("Error saving profile:", error);
+    res.status(500).send({ message: "Failed to save profile." });
+  }
+});
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;

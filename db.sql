@@ -56,6 +56,15 @@ CREATE TABLE account_settings_administrator_password (
     "Confirm Password" VARCHAR(255)
 );
 
+CREATE TABLE account_settings_user_profile (
+    "First Name" VARCHAR(255),
+    "Last Name" VARCHAR(255),
+    "Email" VARCHAR(255),
+    "Phone" VARCHAR(50),
+    "Biography" TEXT
+);
+
+
 
 
 
