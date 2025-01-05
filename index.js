@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const pool = require("./db");
+const bcrypt = require("bcrypt");
 
 const app = express();
 
@@ -259,6 +260,67 @@ app.post("/api/save-agency-draft", async (req, res) => {
   } catch (error) {
     console.error("Error saving agency draft:", error);
     res.status(500).json({ message: "Error saving agency draft." });
+  }
+});
+
+// Add team member
+app.post("/api/team-members", async (req, res) => {
+  const { nameOfTeamMember, teamMemberEmail } = req.body;
+
+  try {
+    const query = `
+      INSERT INTO manage_agency_mlsa_team_members ("Name of Team Member", "Team Member's Email")
+      VALUES ($1, $2)
+    `;
+    await pool.query(query, [nameOfTeamMember, teamMemberEmail]);
+    res.status(200).json({ message: "Team member added successfully!" });
+  } catch (error) {
+    console.error("Error adding team member:", error);
+    res.status(500).json({ error: "Failed to add team member." });
+  }
+});
+
+// Delete team member
+app.delete("/api/team-members", async (req, res) => {
+  const { nameOfTeamMember, teamMemberEmail } = req.body;
+
+  try {
+    const query = `
+      DELETE FROM manage_agency_mlsa_team_members
+      WHERE "Name of Team Member" = $1 AND "Team Member's Email" = $2
+    `;
+    await pool.query(query, [nameOfTeamMember, teamMemberEmail]);
+    res.status(200).json({ message: "Team member deleted successfully!" });
+  } catch (error) {
+    console.error("Error deleting team member:", error);
+    res.status(500).json({ error: "Failed to delete team member." });
+  }
+});
+
+// API endpoint to update password
+app.post("/api/account-settings/password", async (req, res) => {
+  const { password, confirmPassword } = req.body;
+
+  // Verify passwords match
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match." });
+  }
+
+  try {
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Update the password in the database
+    const query = `
+      INSERT INTO account_settings_administrator_password ("Password", "Confirm Password")
+      VALUES ($1, $2)
+    `;
+    await pool.query(query, [hashedPassword, hashedPassword]);
+
+    res.status(200).json({ message: "Password updated successfully!" });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    res.status(500).json({ error: "Failed to update password." });
   }
 });
 

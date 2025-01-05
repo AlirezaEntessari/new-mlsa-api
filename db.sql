@@ -45,5 +45,18 @@ CREATE TABLE account_settings_administrator_agency (
     "About Your Agency" TEXT
 );
 
+CREATE TABLE manage_agency_mlsa_team_members (
+    "Name of Team Member" VARCHAR(255),
+    "Team Member's Email" VARCHAR(255),
+    "Current Users" TEXT
+);
+
+CREATE TABLE account_settings_administrator_password (
+    "Password" VARCHAR(255),
+    "Confirm Password" VARCHAR(255)
+);
+
+
+
 
 
