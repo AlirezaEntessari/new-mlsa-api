@@ -341,6 +341,69 @@ app.post("/api/account-settings/user-profile", async (req, res) => {
   }
 });
 
+// Endpoint to save user password
+app.post("/api/account-settings/user-password", async (req, res) => {
+  const { password, confirmPassword } = req.body;
+
+  if (password !== confirmPassword) {
+    return res.status(400).send({ message: "Passwords do not match." });
+  }
+
+  try {
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert hashed password and confirm password into the database
+    await pool.query(
+      `INSERT INTO account_settings_user_password ("Password", "Confirm Password") 
+       VALUES ($1, $2)`,
+      [hashedPassword, hashedPassword]
+    );
+
+    res.status(200).send({ message: "Password updated successfully!" });
+  } catch (error) {
+    console.error("Error saving password:", error);
+    res.status(500).send({ message: "Failed to update password." });
+  }
+});
+
+// Endpoint to handle referral form submission
+app.post("/api/agency-referral", async (req, res) => {
+  const {
+    agencyName,
+    websiteAddress,
+    industry,
+    agencyEmail,
+    phoneNumber,
+    yourName,
+    yourEmail,
+    yourAgency,
+    yourMessage,
+  } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO agency_referral_form ("Name of Agency", "Agency's Website Address", "Industry", "Agency Email", "Phone Number", "Name", "Personal Email", "Your Agency", "Your Message")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        agencyName,
+        websiteAddress,
+        industry,
+        agencyEmail,
+        phoneNumber,
+        yourName,
+        yourEmail,
+        yourAgency,
+        yourMessage,
+      ]
+    );
+    res.status(200).send({ message: "Referral submitted successfully!" });
+  } catch (error) {
+    console.error("Error saving referral:", error);
+    res.status(500).send({ message: "Failed to submit referral." });
+  }
+});
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;

@@ -64,6 +64,25 @@ CREATE TABLE account_settings_user_profile (
     "Biography" TEXT
 );
 
+CREATE TABLE account_settings_user_password (
+    "Password" VARCHAR(255),
+    "Confirm Password" VARCHAR(255)
+);
+
+CREATE TABLE agency_referral_form (
+    "Name of Agency" VARCHAR(255),
+    "Agency's Website Address" VARCHAR(255),
+    "Industry" VARCHAR(255),
+    "Agency Email" VARCHAR(255),
+    "Phone Number" VARCHAR(50),
+    "Name" VARCHAR(255),
+    "Personal Email" VARCHAR(255),
+    "Your Agency" VARCHAR(255),
+    "Your Message" TEXT
+);
+
+
+
 
 
 
