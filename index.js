@@ -404,6 +404,83 @@ app.post("/api/agency-referral", async (req, res) => {
   }
 });
 
+app.post("/api/post-job", async (req, res) => {
+  const {
+    clientName,
+    agencyJobId,
+    country,
+    state,
+    city,
+    zipCode,
+    jobTitle,
+    industry,
+    jobType,
+    openings,
+    citizenship,
+    typeOfVisa,
+    experienceLevel,
+    salaryType,
+    environment,
+    startDate,
+    travel,
+    paidRelocation,
+    bonus,
+    requiredEducation,
+    jobDescription,
+    requirement1,
+    comments,
+    requiredSkills,
+    placementFee,
+    guaranteePeriod,
+  } = req.body;
+
+  try {
+    const query = `
+      INSERT INTO "posted_jobs" (
+        "Client Name", "Agency Job ID Number", "Country", "State", "City", "Zip Code",
+        "Job Title", "Industry", "Job Type", "Openings", "Citizenship", "Type of VISA",
+        "Experience Level", "Salary Type", "Environment", "Start Date", "Travel",
+        "Paid Relocation", "Bonus", "Required Education", "Job Description", "Requirement 1",
+        "Comments", "Required Skills", "Placement Fee", "Guarantee Period"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
+    `;
+
+    await pool.query(query, [
+      clientName,
+      agencyJobId,
+      country,
+      state,
+      city,
+      zipCode,
+      jobTitle,
+      industry,
+      jobType,
+      openings,
+      citizenship,
+      typeOfVisa,
+      experienceLevel,
+      salaryType,
+      environment,
+      startDate,
+      travel,
+      paidRelocation,
+      bonus,
+      requiredEducation,
+      jobDescription,
+      requirement1,
+      comments,
+      requiredSkills,
+      placementFee,
+      guaranteePeriod,
+    ]);
+
+    res.status(200).json({ message: "Job posted successfully!" });
+  } catch (error) {
+    console.error("Error inserting job into database:", error);
+    res.status(500).json({ error: "An error occurred while posting the job." });
+  }
+});
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;

@@ -81,6 +81,36 @@ CREATE TABLE agency_referral_form (
     "Your Message" TEXT
 );
 
+CREATE TABLE "posted_jobs" (
+    "Client Name" VARCHAR(255),
+    "Agency Job ID Number" VARCHAR(255),
+    "Country" VARCHAR(255),
+    "State" VARCHAR(255),
+    "City" VARCHAR(255),
+    "Zip Code" VARCHAR(255),
+    "Job Title" VARCHAR(255),
+    "Industry" VARCHAR(255),
+    "Openings" VARCHAR(255),
+    "Job Type" VARCHAR(255),
+    "Citizenship" VARCHAR(255),
+    "Type of VISA" VARCHAR(255),
+    "Experience Level" VARCHAR(255),
+    "Salary Type" VARCHAR(255),
+    "Environment" VARCHAR(255),
+    "Start Date" VARCHAR(255),
+    "Travel" VARCHAR(255),
+    "Paid Relocation" VARCHAR(255),
+    "Bonus" VARCHAR(255),
+    "Required Education" VARCHAR(255),
+    "Job Description" TEXT,
+    "Requirement 1" TEXT,
+    "Comments" TEXT,
+    "Required Skills" TEXT,
+    "Placement Fee" VARCHAR(255),
+    "Guarantee Period" VARCHAR(255)
+);
+
+
 
 
 
