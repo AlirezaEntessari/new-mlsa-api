@@ -481,6 +481,88 @@ app.post("/api/post-job", async (req, res) => {
   }
 });
 
+app.post("/post-candidate", async (req, res) => {
+  const {
+    candidateFirstName,
+    middleName,
+    lastName,
+    country,
+    state,
+    city,
+    zipCode,
+    primaryEmail,
+    homePhone,
+    cellPhone,
+    bestTimeToCall,
+    title,
+    industry,
+    jobType,
+    citizenship,
+    typeOfVisa,
+    experienceLevel,
+    salaryType,
+    environment,
+    startDate,
+    willingToTravel,
+    willingToRelocate,
+    education,
+    linkedin,
+    facebook,
+    twitter,
+    portfolio,
+    candidateDescription,
+    skills,
+  } = req.body;
+
+  const query = `
+    INSERT INTO posted_candidates (
+      "Candidate First Name", "Middle Name", "Last Name", "Country", "State",
+      "City", "Zip Code", "Primary Email", "Home Phone", "Cell Phone", "Best Time to Call",
+      "Title", "Industry", "Job Type", "Citizenship", "Type of VISA",
+      "Experience Level", "Salary Type", "Environment", "Start Date",
+      "Willing to Travel", "Willing to Relocate", "Education", "LinkedIn",
+      "Facebook", "Twitter (X)", "Portfolio", "Candidate Description/Notes", "Skills"
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+  `;
+
+  try {
+    await pool.query(query, [
+      candidateFirstName,
+      middleName,
+      lastName,
+      country,
+      state,
+      city,
+      zipCode,
+      primaryEmail,
+      homePhone,
+      cellPhone,
+      bestTimeToCall,
+      title,
+      industry,
+      jobType,
+      citizenship,
+      typeOfVisa,
+      experienceLevel,
+      salaryType,
+      environment,
+      startDate,
+      willingToTravel,
+      willingToRelocate,
+      education,
+      linkedin,
+      facebook,
+      twitter,
+      portfolio,
+      candidateDescription,
+      skills,
+    ]);
+    res.status(200).json({ message: "Candidate posted successfully." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to post candidate." });
+  }
+});
 
 // Start the server
 const PORT = process.env.PORT || 5000;

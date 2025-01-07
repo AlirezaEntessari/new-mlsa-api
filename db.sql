@@ -110,6 +110,39 @@ CREATE TABLE "posted_jobs" (
     "Guarantee Period" VARCHAR(255)
 );
 
+CREATE TABLE posted_candidates (
+    "Candidate First Name" VARCHAR(255),
+    "Middle Name" VARCHAR(255),
+    "Last Name" VARCHAR(255),
+    "Country" VARCHAR(255),
+    "State" VARCHAR(255),
+    "City" VARCHAR(255),
+    "Zip Code" VARCHAR(20),
+    "Primary Email" VARCHAR(255),
+    "Home Phone" VARCHAR(50),
+    "Best Time to Call" VARCHAR(50),
+    "Cell Phone" VARCHAR(50),
+    "Title" VARCHAR(255),
+    "Industry" VARCHAR(255),
+    "Job Type" VARCHAR(255),
+    "Citizenship" VARCHAR(255),
+    "Type of VISA" VARCHAR(255),
+    "Experience Level" VARCHAR(255),
+    "Salary Type" VARCHAR(50),
+    "Environment" VARCHAR(255),
+    "Start Date" VARCHAR(255),
+    "Willing to Travel" VARCHAR(20),
+    "Willing to Relocate" VARCHAR(20),
+    "Education" VARCHAR(255),
+    "LinkedIn" VARCHAR(255),
+    "Facebook" VARCHAR(255),
+    "Twitter (X)" VARCHAR(255),
+    "Portfolio" VARCHAR(255),
+    "Candidate Description/Notes" TEXT,
+    "Skills" TEXT
+);
+
+
 
 
 
