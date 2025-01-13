@@ -12,6 +12,51 @@ app.use(express.urlencoded({ extended: true }));
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
+// app.post("/api/agency_information", async (req, res) => {
+//   const {
+//     email,
+//     membershipPlan,
+//     staffingAgencyName,
+//     staffingAgencyEIN,
+//     staffingAgencyWebsite,
+//     industryField,
+//     fullNameAdmin,
+//     password,
+//   } = req.body;
+
+//   try {
+//     const query = `
+//       INSERT INTO agency_information (
+//         "Email",
+//         "Membership Plan",
+//         "Staffing Agency Name",
+//         "Staffing Agency EIN",
+//         "Staffing Agency Website",
+//         "Industry Field",
+//         "Full Name (Admin)",
+//         "Password"
+//       )
+//       VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+//     `;
+
+//     await pool.query(query, [
+//       email,
+//       membershipPlan,
+//       staffingAgencyName,
+//       staffingAgencyEIN,
+//       staffingAgencyWebsite,
+//       industryField,
+//       fullNameAdmin,
+//       password,
+//     ]);
+
+//     res.status(200).json({ message: "Data saved successfully" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "An error occurred while saving data" });
+//   }
+// });
+
 app.post("/api/agency_information", async (req, res) => {
   const {
     email,
@@ -25,6 +70,10 @@ app.post("/api/agency_information", async (req, res) => {
   } = req.body;
 
   try {
+    // Hash the password using bcrypt
+    const saltRounds = 10; // Number of salt rounds for hashing
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
     const query = `
       INSERT INTO agency_information (
         "Email",
@@ -47,7 +96,7 @@ app.post("/api/agency_information", async (req, res) => {
       staffingAgencyWebsite,
       industryField,
       fullNameAdmin,
-      password,
+      hashedPassword, // Use the hashed password here
     ]);
 
     res.status(200).json({ message: "Data saved successfully" });
@@ -116,6 +165,66 @@ app.post("/api/agency_information", async (req, res) => {
 //   }
 // });
 
+// app.post('/api/payment-details', async (req, res) => {
+//   const {
+//     billingDuration,
+//     firstName,
+//     lastName,
+//     cardNumber,
+//     expires,
+//     cvv,
+//     addressLine1,
+//     addressLine2,
+//     city,
+//     state,
+//     countryRegion,
+//     zipCode,
+//   } = req.body;
+
+//   const query = `
+//     INSERT INTO payment_details (
+//       "Billing Duration", "First name", "Last name", "Card number", "Expires", "CVV", 
+//       "Address Line 1", "Address Line 2", "City", "State", 
+//       "Country/region", "Zip code"
+//     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+//   `;
+
+//   const values = [
+//     billingDuration, firstName, lastName, cardNumber, expires, cvv, 
+//     addressLine1, addressLine2, city, state, 
+//     countryRegion, zipCode
+//   ];
+
+//   try {
+//     await pool.query(query, values);
+
+//     // Create a Stripe Checkout session
+//     const session = await stripe.checkout.sessions.create({
+//       payment_method_types: ['card'],
+//       line_items: [
+//         {
+//           price_data: {
+//             currency: 'usd',
+//             product_data: {
+//               name: 'MLSA Membership',
+//             },
+//             unit_amount: billingDuration === 'Yearly' ? 249900 : 24900,  // $2499.00 for yearly or $249.00 for monthly
+//           },
+//           quantity: 1,
+//         },
+//       ],
+//       mode: 'payment',
+//       success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+//       cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+//     });
+
+//     res.status(200).json({ url: session.url });
+//   } catch (error) {
+//     console.error('Error creating Stripe Checkout session:', error);
+//     res.status(500).json({ error: 'Failed to create payment session' });
+//   }
+// });
+
 app.post('/api/payment-details', async (req, res) => {
   const {
     billingDuration,
@@ -132,21 +241,36 @@ app.post('/api/payment-details', async (req, res) => {
     zipCode,
   } = req.body;
 
-  const query = `
-    INSERT INTO payment_details (
-      "Billing Duration", "First name", "Last name", "Card number", "Expires", "CVV", 
-      "Address Line 1", "Address Line 2", "City", "State", 
-      "Country/region", "Zip code"
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-  `;
-
-  const values = [
-    billingDuration, firstName, lastName, cardNumber, expires, cvv, 
-    addressLine1, addressLine2, city, state, 
-    countryRegion, zipCode
-  ];
-
   try {
+    // Hash sensitive fields using bcrypt
+    const saltRounds = 10; // Adjust as needed (higher is more secure but slower)
+    const hashedCardNumber = await bcrypt.hash(cardNumber, saltRounds);
+    const hashedExpires = await bcrypt.hash(expires, saltRounds);
+    const hashedCvv = await bcrypt.hash(cvv, saltRounds);
+
+    const query = `
+      INSERT INTO payment_details (
+        "Billing Duration", "First name", "Last name", "Card number", "Expires", "CVV", 
+        "Address Line 1", "Address Line 2", "City", "State", 
+        "Country/region", "Zip code"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `;
+
+    const values = [
+      billingDuration,
+      firstName,
+      lastName,
+      hashedCardNumber, // Store hashed card number
+      hashedExpires,    // Store hashed expiration date
+      hashedCvv,        // Store hashed CVV
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      countryRegion,
+      zipCode,
+    ];
+
     await pool.query(query, values);
 
     // Create a Stripe Checkout session
@@ -171,8 +295,8 @@ app.post('/api/payment-details', async (req, res) => {
 
     res.status(200).json({ url: session.url });
   } catch (error) {
-    console.error('Error creating Stripe Checkout session:', error);
-    res.status(500).json({ error: 'Failed to create payment session' });
+    console.error('Error creating Stripe Checkout session or storing payment details:', error);
+    res.status(500).json({ error: 'Failed to create payment session or store data' });
   }
 });
 
