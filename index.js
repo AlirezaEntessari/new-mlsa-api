@@ -688,6 +688,43 @@ app.post("/post-candidate", async (req, res) => {
   }
 });
 
+// Route to handle Stripe Checkout session creation
+app.post('/api/create-checkout-session', async (req, res) => {
+  const { email, membershipPlan } = req.body;
+
+  try {
+    // Determine the amount based on the membership plan
+    const amount = membershipPlan === 'Yearly' ? 249900 : 24900; // $2499.00 or $249.00 in cents
+
+    // Create a Stripe Checkout session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'MLSA Membership',
+            },
+            unit_amount: amount,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      customer_email: email, // Pre-fill customer email if available
+      success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+    });
+
+    // Send the Checkout session URL to the client
+    res.status(200).json({ url: session.url });
+  } catch (error) {
+    console.error('Error creating Stripe Checkout session:', error);
+    res.status(500).json({ error: 'Failed to create payment session' });
+  }
+});
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
