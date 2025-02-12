@@ -14,20 +14,38 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const { clerkClient } = require("@clerk/express"); // clerkClient will automatically get our keys
 
-app.get("/", async (req, res) => {
-  const { password } = req.body;
+// app.get("/", async (req, res) => {
+//   const { password } = req.body;
+
+//   await clerkClient.users
+//     .verifyPassword({
+//       userId: "user_2suGZVmnyt6TxlHX27GIMVvqjuQ",
+//       password,
+//     })
+//     .then(({ verified }) => {
+//       res.status(200).json({ verified, message: "Password Verified" });
+//     })
+//     .catch((error) => {
+//       res.status(404).json(error);
+//     });
+// });
+
+app.post("/", async (req, res) => {
+  const userEmailAddress = "demouser3+clerk_test@example.com";
 
   await clerkClient.users
-    .verifyPassword({
-      userId: "user_2suGZVmnyt6TxlHX27GIMVvqjuQ",
-      password,
+    .getUser("user_2suGZVmnyt6TxlHX27GIMVvqjuQ")
+    .then(async (data) => {
+      const userEmailData = data.emailAddresses.find(
+        (emailData) => emailData.emailAddress === userEmailAddress
+      );
+      return userEmailData.id;
     })
-    .then(({ verified }) => {
-      res.status(200).json({ verified, message: "Password Verified" });
-    })
-    .catch((error) => {
-      res.status(404).json(error);
-    });
+    .then(
+      async (userEmailId) =>
+        await clerkClient.emailAddresses.deleteEmailAddress(userEmailId)
+    )
+    .then((data) => res.status(200).json(data));
 });
 
 // app.post("/api/agency_information", async (req, res) => {
@@ -769,7 +787,6 @@ app.get("/api/check-agency", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 // Start the server
 const PORT = process.env.PORT || 5000;
