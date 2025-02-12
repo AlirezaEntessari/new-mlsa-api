@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const pool = require("./db");
@@ -10,7 +10,25 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+const { clerkClient } = require("@clerk/express"); // clerkClient will automatically get our keys
+
+app.get("/", async (req, res) => {
+  const { password } = req.body;
+
+  await clerkClient.users
+    .verifyPassword({
+      userId: "user_2suGZVmnyt6TxlHX27GIMVvqjuQ",
+      password,
+    })
+    .then(({ verified }) => {
+      res.status(200).json({ verified, message: "Password Verified" });
+    })
+    .catch((error) => {
+      res.status(404).json(error);
+    });
+});
 
 // app.post("/api/agency_information", async (req, res) => {
 //   const {
@@ -124,15 +142,15 @@ app.post("/api/agency_information", async (req, res) => {
 
 //   const query = `
 //     INSERT INTO payment_details (
-//       "Billing Duration", "First name", "Last name", "Card number", "Expires", "CVV", 
-//       "Address Line 1", "Address Line 2", "City", "State", 
+//       "Billing Duration", "First name", "Last name", "Card number", "Expires", "CVV",
+//       "Address Line 1", "Address Line 2", "City", "State",
 //       "Country/region", "Zip code"
 //     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 //   `;
 
 //   const values = [
-//     billingDuration, firstName, lastName, cardNumber, expires, cvv, 
-//     addressLine1, addressLine2, city, state, 
+//     billingDuration, firstName, lastName, cardNumber, expires, cvv,
+//     addressLine1, addressLine2, city, state,
 //     countryRegion, zipCode
 //   ];
 
@@ -183,15 +201,15 @@ app.post("/api/agency_information", async (req, res) => {
 
 //   const query = `
 //     INSERT INTO payment_details (
-//       "Billing Duration", "First name", "Last name", "Card number", "Expires", "CVV", 
-//       "Address Line 1", "Address Line 2", "City", "State", 
+//       "Billing Duration", "First name", "Last name", "Card number", "Expires", "CVV",
+//       "Address Line 1", "Address Line 2", "City", "State",
 //       "Country/region", "Zip code"
 //     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 //   `;
 
 //   const values = [
-//     billingDuration, firstName, lastName, cardNumber, expires, cvv, 
-//     addressLine1, addressLine2, city, state, 
+//     billingDuration, firstName, lastName, cardNumber, expires, cvv,
+//     addressLine1, addressLine2, city, state,
 //     countryRegion, zipCode
 //   ];
 
@@ -225,7 +243,7 @@ app.post("/api/agency_information", async (req, res) => {
 //   }
 // });
 
-app.post('/api/payment-details', async (req, res) => {
+app.post("/api/payment-details", async (req, res) => {
   const {
     billingDuration,
     firstName,
@@ -261,8 +279,8 @@ app.post('/api/payment-details', async (req, res) => {
       firstName,
       lastName,
       hashedCardNumber, // Store hashed card number
-      hashedExpires,    // Store hashed expiration date
-      hashedCvv,        // Store hashed CVV
+      hashedExpires, // Store hashed expiration date
+      hashedCvv, // Store hashed CVV
       addressLine1,
       addressLine2,
       city,
@@ -275,28 +293,33 @@ app.post('/api/payment-details', async (req, res) => {
 
     // Create a Stripe Checkout session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: "usd",
             product_data: {
-              name: 'MLSA Membership',
+              name: "MLSA Membership",
             },
-            unit_amount: billingDuration === 'Yearly' ? 249900 : 24900,  // $2499.00 for yearly or $249.00 for monthly
+            unit_amount: billingDuration === "Yearly" ? 249900 : 24900, // $2499.00 for yearly or $249.00 for monthly
           },
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode: "payment",
       success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
     });
 
     res.status(200).json({ url: session.url });
   } catch (error) {
-    console.error('Error creating Stripe Checkout session or storing payment details:', error);
-    res.status(500).json({ error: 'Failed to create payment session or store data' });
+    console.error(
+      "Error creating Stripe Checkout session or storing payment details:",
+      error
+    );
+    res
+      .status(500)
+      .json({ error: "Failed to create payment session or store data" });
   }
 });
 
@@ -689,29 +712,29 @@ app.post("/post-candidate", async (req, res) => {
 });
 
 // Route to handle Stripe Checkout session creation
-app.post('/api/create-checkout-session', async (req, res) => {
+app.post("/api/create-checkout-session", async (req, res) => {
   const { email, membershipPlan } = req.body;
 
   try {
     // Determine the amount based on the membership plan
-    const amount = membershipPlan === 'Yearly' ? 249900 : 24900; // $2499.00 or $249.00 in cents
+    const amount = membershipPlan === "Yearly" ? 249900 : 24900; // $2499.00 or $249.00 in cents
 
     // Create a Stripe Checkout session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: "usd",
             product_data: {
-              name: 'MLSA Membership',
+              name: "MLSA Membership",
             },
             unit_amount: amount,
           },
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode: "payment",
       customer_email: email, // Pre-fill customer email if available
       success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
@@ -720,12 +743,34 @@ app.post('/api/create-checkout-session', async (req, res) => {
     // Send the Checkout session URL to the client
     res.status(200).json({ url: session.url });
   } catch (error) {
-    console.error('Error creating Stripe Checkout session:', error);
-    res.status(500).json({ error: 'Failed to create payment session' });
+    console.error("Error creating Stripe Checkout session:", error);
+    res.status(500).json({ error: "Failed to create payment session" });
   }
 });
+
+app.get("/api/check-agency", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "Missing email parameter" });
+  }
+
+  try {
+    const query = `SELECT COUNT(*) FROM agency_information WHERE "Email" = $1`;
+    const result = await pool.query(query, [email]);
+
+    if (result.rows[0].count > 0) {
+      res.json({ hasAgency: true });
+    } else {
+      res.json({ hasAgency: false });
+    }
+  } catch (err) {
+    console.error("Error checking agency:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
