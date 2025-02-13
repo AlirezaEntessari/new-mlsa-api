@@ -15,6 +15,16 @@ ALTER TABLE agency_information
 ADD COLUMN "User" VARCHAR(255),
 ADD COLUMN "Account Active" BOOLEAN DEFAULT FALSE;
 
+ALTER TABLE agency_information ALTER COLUMN "Account Active" DROP DEFAULT;
+
+UPDATE agency_information
+SET "Account Active" = true
+WHERE "User" IN (
+    SELECT "User" FROM agency_information
+    WHERE "User" IS NOT NULL
+);
+
+
 CREATE TABLE payment_details (
     "Billing Duration" VARCHAR(255),
     "Payment Method" VARCHAR(255),

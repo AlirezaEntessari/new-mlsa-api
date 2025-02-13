@@ -10,7 +10,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-const { authenticateUser } = require("./middlewares/clerkMiddleware");
+const { applyClerkMiddleware, authenticateUser } = require('./middlewares/clerkMiddleware');
+
+// Apply Clerk Middleware before routes
+applyClerkMiddleware(app);
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
@@ -111,19 +114,21 @@ app.post("/api/agency_information", authenticateUser, async (req, res) => {
   const clerkApiKey = process.env.CLERK_SECRET_KEY;
 
   try {
-
-     // Fetch user details from Clerk API
-     const clerkResponse = await axios.get(`https://api.clerk.dev/v1/users/${userId}`, {
+    // Fetch user details from Clerk API
+    const clerkResponse = await axios.get(`https://api.clerk.dev/v1/users/${userId}`, {
       headers: { Authorization: `Bearer ${clerkApiKey}` },
     });
 
-    const userStatus = clerkResponse.data.status; // e.g., "active", "pending", "blocked"
-    const isActive = userStatus === "active"; // TRUE if user is active
+    const userData = clerkResponse.data;
+
+    // Determine if the account is active based on Clerk's data
+    const isActive = !userData.banned && !userData.locked; // TRUE if user is not banned or locked
 
     // Hash the password using bcrypt
     const saltRounds = 10; // Number of salt rounds for hashing
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    // Insert agency information (no ON CONFLICT clause)
     const query = `
       INSERT INTO agency_information (
         "Email",
@@ -153,12 +158,14 @@ app.post("/api/agency_information", authenticateUser, async (req, res) => {
       isActive, // Account Active Status
     ]);
 
-    res.status(200).json({ message: "Data saved successfully" });
+    res.status(200).json({ message: "Agency information saved successfully", accountActive: isActive });
   } catch (err) {
-    console.error(err);
+    console.error("Error saving agency information:", err);
     res.status(500).json({ error: "An error occurred while saving data" });
   }
 });
+
+
 
 app.get("/api/check-user-agency", authenticateUser, async (req, res) => {
   const userId = req.user.id;

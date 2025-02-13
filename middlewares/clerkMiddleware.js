@@ -1,5 +1,10 @@
 const { clerkMiddleware, getAuth } = require("@clerk/express");
 
+// Register Clerk middleware globally before using authentication functions
+const applyClerkMiddleware = (app) => {
+  app.use(clerkMiddleware());
+};
+
 const authenticateUser = (req, res, next) => {
   const { userId } = getAuth(req);
 
@@ -11,4 +16,4 @@ const authenticateUser = (req, res, next) => {
   next();
 };
 
-module.exports = { clerkMiddleware, authenticateUser };
+module.exports = { applyClerkMiddleware, authenticateUser };
