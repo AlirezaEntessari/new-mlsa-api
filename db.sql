@@ -11,6 +11,10 @@ CREATE TABLE agency_information (
     "Password" VARCHAR(255)
 );
 
+ALTER TABLE agency_information
+ADD COLUMN "User" VARCHAR(255),
+ADD COLUMN "Account Active" BOOLEAN DEFAULT FALSE;
+
 CREATE TABLE payment_details (
     "Billing Duration" VARCHAR(255),
     "Payment Method" VARCHAR(255),
