@@ -1,5 +1,14 @@
 CREATE DATABASE newmlsa;
 
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    clerk_user_id VARCHAR(255),
+    name VARCHAR(255),
+    date_of_sign_up TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_time_user_logged_in TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_user_was_disabled TIMESTAMP
+);
+
 CREATE TABLE agency_information (
     "Email" VARCHAR(255),
     "Membership Plan" VARCHAR(255),

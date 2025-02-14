@@ -17,7 +17,7 @@ applyClerkMiddleware(app);
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-const { clerkClient } = require("@clerk/express"); // clerkClient will automatically get our keys
+const { clerkClient, requireAuth } = require("@clerk/express"); // clerkClient will automatically get our keys
 
 // app.get("/", async (req, res) => {
 //   const { password } = req.body;
