@@ -19,6 +19,14 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const { clerkClient, requireAuth } = require("@clerk/express"); // clerkClient will automatically get our keys
 
+app.use((req, res, next) => {
+  console.log(`🔍 Incoming Request: ${req.method} ${req.url}`);
+  console.log("Headers:", req.headers);
+  console.log("Body:", req.body);
+  next();
+});
+
+
 // app.get("/", async (req, res) => {
 //   const { password } = req.body;
 
@@ -51,6 +59,190 @@ app.post("/", async (req, res) => {
         await clerkClient.emailAddresses.deleteEmailAddress(userEmailId)
     )
     .then((data) => res.status(200).json(data));
+});
+
+app.post("/api/clerk-user-created", async (req, res) => {
+  console.log(`Clerk Webhook Triggered: ${new Date().toISOString()}`);
+  console.log("Incoming Webhook Data:", JSON.stringify(req.body, null, 2));
+
+  const { data, type } = req.body;
+
+  if (!data || !type) {
+    console.error("Missing 'data' or 'type' in request body");
+    return res.status(400).json({ message: "Invalid request format" });
+  }
+
+  if (type === "user.created") {
+    console.log("Processing user.created event...");
+
+    const clerkUserId = data.id;
+    const name = data.first_name && data.last_name 
+      ? `${data.first_name} ${data.last_name}`.trim()
+      : data.username ?? "Unknown User";
+
+    const createdAt = new Date(data.created_at).toISOString();
+    const lastLoggedIn = new Date().toISOString();
+    const dateUserWasDisabled = null;
+
+    try {
+      console.log(`Inserting user ${clerkUserId} into database...`);
+
+      const query = `
+        INSERT INTO users (clerk_user_id, name, date_of_sign_up, last_time_user_logged_in, date_user_was_disabled)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT ON CONSTRAINT unique_clerk_user_id DO UPDATE
+        SET last_time_user_logged_in = EXCLUDED.last_time_user_logged_in;
+      `;
+
+      await pool.query(query, [clerkUserId, name, createdAt, lastLoggedIn, dateUserWasDisabled]);
+
+      console.log(`User ${clerkUserId} inserted/updated successfully.`);
+      return res.status(201).json({ message: "User saved successfully" });
+
+    } catch (err) {
+      console.error("Database Insert Error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  if (type === "user.deleted") {
+    console.log("Processing user.deleted event...");
+
+    const clerkUserId = data.id;
+    const dateUserWasDisabled = new Date().toISOString();
+
+    try {
+      console.log(`Marking user ${clerkUserId} as disabled...`);
+
+      const query = `
+        UPDATE users
+        SET date_user_was_disabled = $1
+        WHERE clerk_user_id = $2;
+      `;
+
+      await pool.query(query, [dateUserWasDisabled, clerkUserId]);
+
+      console.log(`User ${clerkUserId} marked as disabled.`);
+      return res.status(200).json({ message: "User disabled successfully" });
+
+    } catch (err) {
+      console.error("Database Update Error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  console.error(`Ignoring event type: ${type}`);
+  return res.status(400).json({ message: "Invalid event type" });
+});
+
+
+
+
+
+
+
+
+// app.post("/api/clerk-user-created", async (req, res) => {
+//   console.log(`Received request on /api/clerk-user-created at ${new Date().toISOString()}`);
+//   console.log("Full Request Body:", JSON.stringify(req.body, null, 2));
+
+//   const { data, type } = req.body;
+
+//   if (!data || !type) {
+//     console.error("Missing 'data' or 'type' in request body");
+//     return res.status(400).json({ message: "Invalid request format" });
+//   }
+
+//   if (type !== "user.created") {
+//     console.error("Invalid event type received:", type);
+//     return res.status(400).json({ message: "Invalid event type" });
+//   }
+
+//   const clerkUserId = data.id;
+//   const name = `${data.first_name} ${data.last_name}`;
+//   const dateOfSignUp = new Date(data.created_at * 1000);
+//   const lastTimeUserLoggedIn = new Date();
+//   const dateUserWasDisabled = null;
+
+//   try {
+//     console.log(`Attempting to insert user ${clerkUserId} into database`);
+
+//     const query = `
+//       INSERT INTO users (clerk_user_id, name, date_of_sign_up, last_time_user_logged_in, date_user_was_disabled)
+//       VALUES ($1, $2, $3, $4, $5)
+//       ON CONFLICT ON CONSTRAINT unique_clerk_user_id DO NOTHING;
+//     `;
+
+//     await pool.query(query, [
+//       clerkUserId,
+//       name,
+//       dateOfSignUp,
+//       lastTimeUserLoggedIn,
+//       dateUserWasDisabled,
+//     ]);
+
+//     console.log(`User ${clerkUserId} inserted successfully.`);
+//     res.status(201).json({ message: "User inserted successfully" });
+//   } catch (err) {
+//     console.error("Database Insert Error:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+
+
+// Clerk Webhook Route for User Login (Optional)
+app.post("/api/clerk-user-logged-in", async (req, res) => {
+  const { data, type } = req.body;
+
+  if (type !== "session.created") {
+    return res.status(400).json({ message: "Invalid event type" });
+  }
+
+  const clerkUserId = data.user_id;
+  const lastTimeUserLoggedIn = new Date();
+
+  try {
+    const query = `
+      UPDATE users
+      SET last_time_user_logged_in = $1
+      WHERE clerk_user_id = $2;
+    `;
+
+    await pool.query(query, [lastTimeUserLoggedIn, clerkUserId]);
+
+    res.status(200).json({ message: "User login time updated" });
+  } catch (err) {
+    console.error("Error updating last login time:", err);
+    res.status(500).json({ error: "Failed to update login time" });
+  }
+});
+
+// Clerk Webhook Route for User Deactivation (Optional)
+app.post("/api/clerk-user-disabled", async (req, res) => {
+  const { data, type } = req.body;
+
+  if (type !== "user.deleted") {
+    return res.status(400).json({ message: "Invalid event type" });
+  }
+
+  const clerkUserId = data.id;
+  const dateUserWasDisabled = new Date();
+
+  try {
+    const query = `
+      UPDATE users
+      SET date_user_was_disabled = $1
+      WHERE clerk_user_id = $2;
+    `;
+
+    await pool.query(query, [dateUserWasDisabled, clerkUserId]);
+
+    res.status(200).json({ message: "User disabled date updated" });
+  } catch (err) {
+    console.error("Error updating disabled date:", err);
+    res.status(500).json({ error: "Failed to update disabled date" });
+  }
 });
 
 // app.post("/api/agency_information", async (req, res) => {
