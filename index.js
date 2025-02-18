@@ -136,6 +136,33 @@ app.post("/api/clerk-user-created", async (req, res) => {
 });
 
 
+app.post("/api/agency-information-clerk", requireAuth(), async (req, res) => {
+  try {
+    const { agency_name, agency_ein, website, location, industry, agency_id, referral } = req.body;
+
+    if (!agency_id) {
+      return res.status(400).json({ error: "Missing agency_id (Clerk user ID)" });
+    }
+
+    const query = `
+      INSERT INTO agency_information_clerk (agency_name, agency_ein, website, location, industry, agency_id, referral)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *;
+    `;
+
+    const values = [agency_name, agency_ein, website, location, industry, agency_id, referral];
+
+    const result = await pool.query(query, values);
+
+    res.status(200).json({ message: "Agency information saved successfully", data: result.rows[0] });
+  } catch (error) {
+    console.error("Error inserting agency information:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+
 
 
 

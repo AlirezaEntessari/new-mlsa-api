@@ -165,6 +165,18 @@ CREATE TABLE posted_candidates (
     "Skills" TEXT
 );
 
+CREATE TABLE agency_information_clerk (
+    id SERIAL PRIMARY KEY,
+    agency_name VARCHAR(255),
+    agency_ein VARCHAR(255),
+    website VARCHAR(255),
+    location VARCHAR(255),
+    industry VARCHAR(255),
+    agency_id VARCHAR(255),
+    referral VARCHAR(255)
+);
+
+
 
 
 
