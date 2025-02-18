@@ -604,6 +604,97 @@ app.post("/api/payment-details", async (req, res) => {
   }
 });
 
+app.post("/api/payment-details-stripe", async (req, res) => {
+  const { billingDuration } = req.body;
+
+  try {
+    // Define price based on billing duration
+    const amount = billingDuration === "Yearly" ? 349900 : 34900; // Amount in cents
+
+    // Create a Stripe Checkout session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "MLSA Membership",
+            },
+            unit_amount: amount,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+    });
+
+    res.status(200).json({ url: session.url });
+  } catch (error) {
+    console.error("Error creating Stripe Checkout session:", error);
+    res.status(500).json({ error: "Failed to create payment session" });
+  }
+});
+
+
+// Stripe Webhook Endpoint
+app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  let event;
+
+  try {
+      const sig = req.headers["stripe-signature"];
+      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+      console.error("Webhook error:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle checkout.session.completed event
+  if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const subscriptionId = session.subscription;
+      const paymentStatus = session.payment_status; // "paid"
+
+      console.log("Payment Successful!");
+      console.log("Subscription ID:", subscriptionId);
+      console.log("Payment Status:", paymentStatus);
+
+      // Store in your database (example)
+      await pool.query(
+          `UPDATE users SET stripe_subscription_id = $1, payment_status = $2 WHERE email = $3`,
+          [subscriptionId, paymentStatus, session.customer_email]
+      );
+  }
+
+  res.json({ received: true });
+});
+
+
+app.get("/api/payment-status", async (req, res) => {
+  try {
+    const { session_id } = req.query;
+
+    if (!session_id) {
+      return res.status(400).json({ error: "Missing session ID" });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    res.json({
+      subscription_id: session.subscription || "N/A",
+      payment_status: session.payment_status, // "paid" or "unpaid"
+    });
+  } catch (error) {
+    console.error("Error retrieving payment status:", error);
+    res.status(500).json({ error: "Failed to retrieve payment status" });
+  }
+});
+
+
+
+
 app.post("/api/save-draft", async (req, res) => {
   const { firstName, lastName, email, phone, biography } = req.body;
 
