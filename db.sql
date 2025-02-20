@@ -1,4 +1,4 @@
-CREATE DATABASE newmlsa;
+-- CREATE DATABASE newmlsa;
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,

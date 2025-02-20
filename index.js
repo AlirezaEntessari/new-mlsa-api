@@ -62,6 +62,9 @@ app.post("/", async (req, res) => {
 });
 
 app.post("/api/clerk-user-created", async (req, res) => {
+  console.log("📌 Raw Clerk Webhook Data:", JSON.stringify(req.body, null, 2));
+  console.log("Incoming Webhook Data:", JSON.stringify(req.body, null, 2));
+
   console.log(`Clerk Webhook Triggered: ${new Date().toISOString()}`);
   console.log("Incoming Webhook Data:", JSON.stringify(req.body, null, 2));
 
@@ -76,9 +79,10 @@ app.post("/api/clerk-user-created", async (req, res) => {
     console.log("Processing user.created event...");
 
     const clerkUserId = data.id;
-    const name = data.first_name && data.last_name 
-      ? `${data.first_name} ${data.last_name}`.trim()
-      : data.username ?? "Unknown User";
+    const firstName = data.firstName
+    //  : data.username ?? "Unknown User";
+    const lastName = data.lastName
+      // : data.username ?? "Unknown User";
 
     const createdAt = new Date(data.created_at).toISOString();
     const lastLoggedIn = new Date().toISOString();
@@ -88,13 +92,13 @@ app.post("/api/clerk-user-created", async (req, res) => {
       console.log(`Inserting user ${clerkUserId} into database...`);
 
       const query = `
-        INSERT INTO users (clerk_user_id, name, date_of_sign_up, last_time_user_logged_in, date_user_was_disabled)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO users (clerk_user_id, first_name, last_name, date_of_sign_up, last_time_user_logged_in, date_user_was_disabled)
+        VALUES ($1, $2, $3, $4, $5, $6)
         ON CONFLICT ON CONSTRAINT unique_clerk_user_id DO UPDATE
         SET last_time_user_logged_in = EXCLUDED.last_time_user_logged_in;
       `;
 
-      await pool.query(query, [clerkUserId, name, createdAt, lastLoggedIn, dateUserWasDisabled]);
+       pool.query(query, [clerkUserId, firstName, lastName, createdAt, lastLoggedIn, dateUserWasDisabled]);
 
       console.log(`User ${clerkUserId} inserted/updated successfully.`);
       return res.status(201).json({ message: "User saved successfully" });
