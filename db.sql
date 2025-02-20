@@ -9,6 +9,13 @@ CREATE TABLE users (
     date_user_was_disabled TIMESTAMP
 );
 
+CREATE TABLE stripe_payment (
+    id SERIAL PRIMARY KEY,
+    stripe_subscription_id VARCHAR(255) NOT NULL,
+    confirmation_of_payment VARCHAR(255) NOT NULL
+);
+
+
 CREATE TABLE agency_information (
     "Email" VARCHAR(255),
     "Membership Plan" VARCHAR(255),
