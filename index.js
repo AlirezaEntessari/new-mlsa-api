@@ -62,6 +62,9 @@ app.post("/", async (req, res) => {
 });
 
 app.post("/api/clerk-user-created", async (req, res) => {
+  console.log("📌 Raw Clerk Webhook Data:", JSON.stringify(req.body, null, 2));
+  console.log("Incoming Webhook Data:", JSON.stringify(req.body, null, 2));
+
   console.log(`Clerk Webhook Triggered: ${new Date().toISOString()}`);
   console.log("Incoming Webhook Data:", JSON.stringify(req.body, null, 2));
 
@@ -76,9 +79,10 @@ app.post("/api/clerk-user-created", async (req, res) => {
     console.log("Processing user.created event...");
 
     const clerkUserId = data.id;
-    const name = data.first_name && data.last_name 
-      ? `${data.first_name} ${data.last_name}`.trim()
-      : data.username ?? "Unknown User";
+    const firstName = data.firstName
+    //  : data.username ?? "Unknown User";
+    const lastName = data.lastName
+      // : data.username ?? "Unknown User";
 
     const createdAt = new Date(data.created_at).toISOString();
     const lastLoggedIn = new Date().toISOString();
@@ -88,13 +92,13 @@ app.post("/api/clerk-user-created", async (req, res) => {
       console.log(`Inserting user ${clerkUserId} into database...`);
 
       const query = `
-        INSERT INTO users (clerk_user_id, name, date_of_sign_up, last_time_user_logged_in, date_user_was_disabled)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO users (clerk_user_id, first_name, last_name, date_of_sign_up, last_time_user_logged_in, date_user_was_disabled)
+        VALUES ($1, $2, $3, $4, $5, $6)
         ON CONFLICT ON CONSTRAINT unique_clerk_user_id DO UPDATE
         SET last_time_user_logged_in = EXCLUDED.last_time_user_logged_in;
       `;
 
-      await pool.query(query, [clerkUserId, name, createdAt, lastLoggedIn, dateUserWasDisabled]);
+       pool.query(query, [clerkUserId, firstName, lastName, createdAt, lastLoggedIn, dateUserWasDisabled]);
 
       console.log(`User ${clerkUserId} inserted/updated successfully.`);
       return res.status(201).json({ message: "User saved successfully" });
@@ -604,133 +608,39 @@ app.post("/api/payment-details", async (req, res) => {
   }
 });
 
-// app.post("/api/payment-details-stripe", async (req, res) => {
-//   const { billingDuration } = req.body;
-
-//   try {
-//     // Define price based on billing duration
-//     const amount = billingDuration === "Yearly" ? 349900 : 34900; // Amount in cents
-
-//     // Create a Stripe Checkout session
-//     const session = await stripe.checkout.sessions.create({
-//       payment_method_types: ["card"],
-//       line_items: [
-//         {
-//           price_data: {
-//             currency: "usd",
-//             product_data: {
-//               name: "MLSA Membership",
-//             },
-//             unit_amount: amount,
-//           },
-//           quantity: 1,
-//         },
-//       ],
-//       mode: "payment",
-//       // success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-//       success_url: `${process.env.FRONTEND_URL}/payment-confirmation-page?session_id={CHECKOUT_SESSION_ID}`,
-//       cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
-//     });
-
-//     res.status(200).json({ url: session.url });
-//   } catch (error) {
-//     console.error("Error creating Stripe Checkout session:", error);
-//     res.status(500).json({ error: "Failed to create payment session" });
-//   }
-// });
-
 app.post("/api/payment-details-stripe", async (req, res) => {
-  const { billingDuration, user_id } = req.body; // Pass user ID from frontend
+  const { billingDuration } = req.body;
 
   try {
-      const amount = billingDuration === "Yearly" ? 349900 : 34900;
+    // Define price based on billing duration
+    const amount = billingDuration === "Yearly" ? 349900 : 34900; // Amount in cents
 
-      const session = await stripe.checkout.sessions.create({
-          payment_method_types: ["card"],
-          line_items: [
-              {
-                  price_data: {
-                      currency: "usd",
-                      product_data: {
-                          name: "MLSA Membership",
-                      },
-                      unit_amount: amount,
-                  },
-                  quantity: 1,
-              },
-          ],
-          mode: "payment",
-          success_url: `${process.env.FRONTEND_URL}/payment-confirmation-page?session_id={CHECKOUT_SESSION_ID}&user_id=${user_id}`,
-          cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
-      });
+    // Create a Stripe Checkout session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "MLSA Membership",
+            },
+            unit_amount: amount,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+    });
 
-      res.status(200).json({ url: session.url });
+    res.status(200).json({ url: session.url });
   } catch (error) {
-      console.error("Error creating Stripe Checkout session:", error);
-      res.status(500).json({ error: "Failed to create payment session" });
+    console.error("Error creating Stripe Checkout session:", error);
+    res.status(500).json({ error: "Failed to create payment session" });
   }
 });
-
-
-
-app.post("/api/payment-success", async (req, res) => {
-  const { session_id } = req.body;
-
-  if (!session_id) {
-      return res.status(400).json({ error: "Session ID is required" });
-  }
-
-  try {
-      // Retrieve session details from Stripe
-      const session = await stripe.checkout.sessions.retrieve(session_id);
-
-      // Extract payment details
-      const stripeSubscriptionId = session.id; // Stripe checkout session ID
-      const confirmationOfPayment = session.payment_status; // 'paid' if successful
-
-      // Save payment details to PostgreSQL
-      const query = `
-          INSERT INTO stripe_payment (stripe_subscription_id, confirmation_of_payment)
-          VALUES ($1, $2)
-          RETURNING *;
-      `;
-      const values = [stripeSubscriptionId, confirmationOfPayment];
-
-      const result = await pool.query(query, values);
-
-      res.status(200).json({ message: "Payment recorded", data: result.rows[0] });
-
-  } catch (error) {
-      console.error("Error fetching payment details:", error);
-      res.status(500).json({ error: "Failed to retrieve payment details" });
-  }
-});
-
-
-app.get("/api/check-payment-status", async (req, res) => {
-  const { user_id } = req.query;
-
-  if (!user_id) {
-      return res.status(400).json({ error: "User ID is required" });
-  }
-
-  try {
-      const query = `
-          SELECT COUNT(*) FROM stripe_payment WHERE stripe_subscription_id = $1 AND confirmation_of_payment = 'paid';
-      `;
-      const result = await pool.query(query, [user_id]);
-
-      const isPaid = parseInt(result.rows[0].count, 10) > 0;
-
-      res.status(200).json({ paid: isPaid });
-  } catch (error) {
-      console.error("Error checking payment status:", error);
-      res.status(500).json({ error: "Failed to check payment status" });
-  }
-});
-
-
-
 
 
 // Stripe Webhook Endpoint
